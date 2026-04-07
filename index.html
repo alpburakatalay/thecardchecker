@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ALPHA CRTS Sistem</title>
+<style>
+body { font-family: Arial; background:#111; color:#0f0; text-align:center; }
+button { padding:10px; margin:5px; }
+input { padding:10px; }
+</style>
+</head>
+<body>
+
+<h1>ALPHA-CRTS Sistem</h1>
+
+<h2>Seri No Üret</h2>
+<button onclick="uret()">Üret</button>
+<p id="sonuc"></p>
+
+<h2>Seri No Kontrol</h2>
+<input type="text" id="kontrolInput" placeholder="Seri no gir">
+<button onclick="kontrol()">Kontrol Et</button>
+<p id="kontrolSonuc"></p>
+
+<script>
+function rastgeleSayi(len) {
+    return Math.floor(Math.random() * Math.pow(10, len))
+}
+
+function rastgeleHarf() {
+    const harfler = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    return harfler[Math.floor(Math.random() * harfler.length)];
+}
+
+function uret() {
+    let durum = Math.random() > 0.5 ? "T" : "G";
+    let batch = rastgeleSayi(3);
+    let kategori = rastgeleHarf();
+    let id = rastgeleSayi(3);
+
+    let seri = `ALPHA-CRTS-${durum}${batch}-${kategori}${id}`;
+
+    // kayıt et
+    let liste = JSON.parse(localStorage.getItem("seriler")) || [];
+    liste.push(seri);
+    localStorage.setItem("seriler", JSON.stringify(liste));
+
+    document.getElementById("sonuc").innerText = seri;
+}
+
+function kontrol() {
+    let girilen = document.getElementById("kontrolInput").value;
+    let liste = JSON.parse(localStorage.getItem("seriler")) || [];
+
+    if(liste.includes(girilen)) {
+        document.getElementById("kontrolSonuc").innerText = "✅ GERÇEK";
+    } else {
+        document.getElementById("kontrolSonuc").innerText = "❌ SAHTE";
+    }
+}
+</script>
+
+</body>
+</html>
