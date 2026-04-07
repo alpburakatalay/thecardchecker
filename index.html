@@ -2,29 +2,96 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>ALPHA CRTS Sistem</title>
+<title>ALPHA CREATS</title>
 <style>
-body { font-family: Arial; background:#111; color:#0f0; text-align:center; }
-button { padding:10px; margin:5px; }
-input { padding:10px; }
+body {
+    font-family: Arial;
+    background: #f5f5f5;
+    text-align: center;
+}
+
+.container {
+    width: 450px;
+    margin: auto;
+    margin-top: 40px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+}
+
+h1, h2 {
+    margin: 10px;
+}
+
+button {
+    padding: 10px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+input, select {
+    padding: 10px;
+    width: 80%;
+    margin: 5px 0;
+}
+
+#adminPanel {
+    display: none;
+    margin-top: 20px;
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
+}
 </style>
 </head>
+
 <body>
+<div class="container">
 
-<h1>ALPHA-CRTS Sistem</h1>
+    <h1>ALPHATECH</h1>
+    <h2>SERİ NUMARASI TEST CİHAZI</h2>
 
-<h2>Seri No Üret</h2>
-<button onclick="uret()">Üret</button>
-<p id="sonuc"></p>
+    <hr>
 
-<h2>Seri No Kontrol</h2>
-<input type="text" id="kontrolInput" placeholder="Seri no gir">
-<button onclick="kontrol()">Kontrol Et</button>
-<p id="kontrolSonuc"></p>
+    <h3>Seri Numara Kontrol</h3>
+    <input id="kontrolInput" placeholder="Seri gir">
+    <br>
+    <button onclick="kontrol()">Kontrol Et</button>
+    <p id="kontrolSonuc"></p>
+
+    <hr>
+
+    <h3>Admin Giriş</h3>
+    <input id="sifreInput" type="password" placeholder="Şifre">
+    <br>
+    <button onclick="giris()">Giriş</button>
+
+    <div id="adminPanel">
+        <h3>Seri Üretici</h3>
+        <button onclick="uret()">Seri Üret</button>
+        <p id="sonuc"></p>
+
+        <h3>Serileri Export / Import</h3>
+        <button onclick="indir()">Serileri İndir</button>
+        <br>
+        <input type="file" id="dosyaInput">
+        <button onclick="yukle()">Dosya Yükle</button>
+        <p id="importSonuc"></p>
+
+        <h3>Sistemi Resetle</h3>
+        <button onclick="reset()">Reset LocalStorage</button>
+        <p id="resetSonuc"></p>
+    </div>
+
+</div>
 
 <script>
+// 🔒 Şifre Base64 ile
+const SIFRE = atob("YWxwaGF0ZWNoMTIz"); // base64
+
+// Rastgele üretim
 function rastgeleSayi(len) {
-    return Math.floor(Math.random() * Math.pow(10, len))
+    return Math.floor(Math.random() * Math.pow(10, len)).toString().padStart(len, '0');
 }
 
 function rastgeleHarf() {
@@ -32,15 +99,22 @@ function rastgeleHarf() {
     return harfler[Math.floor(Math.random() * harfler.length)];
 }
 
+function seriVarMi(seri) {
+    let liste = JSON.parse(localStorage.getItem("seriler")) || [];
+    return liste.includes(seri);
+}
+
+// Seri üret
 function uret() {
-    let durum = Math.random() > 0.5 ? "T" : "G";
-    let batch = rastgeleSayi(3);
-    let kategori = rastgeleHarf();
-    let id = rastgeleSayi(3);
+    let seri;
+    do {
+        let durum = Math.random() > 0.5 ? "T" : "G";
+        let batch = rastgeleSayi(3);
+        let kategori = rastgeleHarf();
+        let id = rastgeleSayi(3);
+        seri = `ALPHA-CRTS-${durum}${batch}-${kategori}${id}`;
+    } while (seriVarMi(seri));
 
-    let seri = `ALPHA-CRTS-${durum}${batch}-${kategori}${id}`;
-
-    // kayıt et
     let liste = JSON.parse(localStorage.getItem("seriler")) || [];
     liste.push(seri);
     localStorage.setItem("seriler", JSON.stringify(liste));
@@ -48,15 +122,86 @@ function uret() {
     document.getElementById("sonuc").innerText = seri;
 }
 
+function formatDogruMu(seri) {
+    const regex = /^ALPHA-CRTS-[TG][0-9]{3}-[A-Z][0-9]{3}$/;
+    return regex.test(seri);
+}
+
 function kontrol() {
     let girilen = document.getElementById("kontrolInput").value;
-    let liste = JSON.parse(localStorage.getItem("seriler")) || [];
 
-    if(liste.includes(girilen)) {
-        document.getElementById("kontrolSonuc").innerText = "✅ GERÇEK";
-    } else {
-        document.getElementById("kontrolSonuc").innerText = "❌ SAHTE";
+    if(!formatDogruMu(girilen)) {
+        document.getElementById("kontrolSonuc").innerText = "⚠️ GEÇERSİZ FORMAT";
+        return;
     }
+
+    let liste = JSON.parse(localStorage.getItem("seriler")) || [];
+    document.getElementById("kontrolSonuc").innerText = liste.includes(girilen) ? "✅ GERÇEK" : "❌ SAHTE";
+}
+
+function giris() {
+    let sifre = document.getElementById("sifreInput").value;
+    if(sifre === SIFRE) {
+        document.getElementById("adminPanel").style.display = "block";
+        alert("ACCESS GRANTED");
+    } else {
+        alert("ACCESS DENIED");
+    }
+}
+
+// Export / İndir
+function indir() {
+    let liste = JSON.parse(localStorage.getItem("seriler")) || [];
+    let blob = new Blob([liste.join("\n")], { type: "text/plain" });
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "seriler.txt";
+    a.click();
+}
+
+// Import / Yükle
+function yukle() {
+    const file = document.getElementById("dosyaInput").files[0];
+    if(!file) return alert("Dosya seçilmedi!");
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const icerik = e.target.result.split(/\r?\n/);
+        let liste = JSON.parse(localStorage.getItem("seriler")) || [];
+        let yeni = 0;
+
+        icerik.forEach(seri => {
+            if(formatDogruMu(seri) && !liste.includes(seri)) {
+                liste.push(seri);
+                yeni++;
+            }
+        });
+
+        localStorage.setItem("seriler", JSON.stringify(liste));
+        document.getElementById("importSonuc").innerText = `${yeni} yeni seri yüklendi!`;
+    }
+    reader.readAsText(file);
+}
+
+// 🔥 Reset LocalStorage
+function reset() {
+    // 1. Ekstra şifre sor
+    const ekstraSifre = prompt("⚠️ Reset için ekstra şifreyi girin:");
+    if(ekstraSifre !== "alphatech1234") {  //Güvenlik Açığı
+        alert("Hatalı ekstra şifre! Reset iptal edildi.");
+        return;
+    }
+
+    // 2. Onay sor
+    const eminMisin = confirm("Seri listesi tamamen silinecek! Emin misin?");
+    if(!eminMisin) {
+        alert("Reset iptal edildi.");
+        return;
+    }
+
+    // 3. Gerçekten reset
+    localStorage.removeItem("seriler");
+    document.getElementById("resetSonuc").innerText = "✅ Seri listesi sıfırlandı!";
 }
 </script>
 
